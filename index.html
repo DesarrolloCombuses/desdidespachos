@@ -1,49 +1,104 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Despachos prueba rio negro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
   <style>
-    :root { --header: 52px; }
-    *{ box-sizing: border-box }
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0f172a; color:#fff }
-    header{ height:var(--header); display:flex; align-items:center; gap:10px; padding:0 12px; background:#111827; position:sticky; top:0 }
+    :root { --header: 52px; --bg:#0f172a; --panel:#111827; --primary:#2563eb; --text:#fff; --muted:#a3a3a3; }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    header{
+      height:var(--header); display:flex; align-items:center; gap:10px;
+      padding:0 12px; background:var(--panel); position:sticky; top:0; z-index:10;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
     header h1{ font-size:16px; margin:0; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-    a.btn{ margin-left:auto; color:#fff; text-decoration:none; background:#2563eb; padding:8px 12px; border-radius:10px; font-weight:700 }
-    .wrap{ width:100%; height:calc(100svh - var(--header)); /* usa 100dvh/100svh en navegadores modernos */ }
-    iframe{ width:100%; height:100%; border:0; display:block; background:#fff }
-    /* fallback para navegadores viejos */
+    .wrap{
+      width:100%;
+      height:calc(100svh - var(--header));
+    }
     @supports not (height: 100svh){
       .wrap{ height:calc(100vh - var(--header)); }
     }
+    iframe{
+      width:100%; height:100%; border:0; display:block; background:#fff
+    }
+    .bar{
+      display:flex; gap:8px; align-items:center; padding:10px 12px;
+      background:#0b1226; border-top:1px solid rgba(255,255,255,.08);
+    }
+    .hint{ color:var(--muted); font-size:13px }
+    .btn{
+      appearance:none; border:0; border-radius:10px; padding:10px 14px; font-weight:700;
+      background:var(--primary); color:#fff; cursor:pointer;
+    }
+    .btn-outline{
+      background:transparent; color:#fff; border:1px solid rgba(255,255,255,.25);
+    }
+    .hidden{ display:none !important }
   </style>
 </head>
 <body>
   <header>
     <h1>Despachos prueba rio negro</h1>
-   
   </header>
 
   <div class="wrap">
-    <iframe id="app" src="https://script.google.com/macros/s/AKfycbzjp9fBeX7XWn-YvzDNaTCyWtcri_MHoKdJiOXsOpvKVFARIP5HX0Vgu7BUvyUFGRSR/exec" allow="clipboard-read; clipboard-write"></iframe>
+    <!-- IMPORTANTE: allow="geolocation *" habilita geolocalización al contenido embebido -->
+    <iframe
+      id="app"
+      src="https://script.google.com/macros/s/AKfycbzjp9fBeX7XWn-YvzDNaTCyWtcri_MHoKdJiOXsOpvKVFARIP5HX0Vgu7BUvyUFGRSR/exec"
+      allow="geolocation *; clipboard-read *; clipboard-write *"
+      referrerpolicy="strict-origin-when-cross-origin"
+    ></iframe>
+  </div>
+
+  <!-- Fallback / ayudas cuando el navegador (o un in-app browser) bloquea permisos -->
+  <div class="bar" id="helpBar">
+    <div class="hint" id="helpText">
+      Si la ubicación se bloquea, abre la app en el navegador del sistema y concede permiso de ubicación.
+    </div>
+    <button class="btn btn-outline" id="openNew">Abrir en nueva pestaña</button>
   </div>
 
   <script>
-    // Ajuste fino de altura real (iOS barras/rotación)
+    // Ajuste de altura real (rotación / barras iOS/Android)
     const app = document.getElementById('app');
     const headerH = () => document.querySelector('header').offsetHeight;
     function fit(){ app.style.height = (window.innerHeight - headerH()) + 'px'; }
-    window.addEventListener('resize', fit);
-    window.addEventListener('orientationchange', fit);
+    addEventListener('resize', fit);
+    addEventListener('orientationchange', fit);
     fit();
 
-    // (Opcional) si el contenido GAS quiere sugerir una altura, puede mandarla con postMessage
-    window.addEventListener('message', ev => {
-      if (ev.data && ev.data.kind === 'gasHeight') {
-        // app.style.height = Math.min(ev.data.h, window.innerHeight - headerH()) + 'px';
-      }
-    });
+    // Botón "Abrir en nueva pestaña"
+    document.getElementById('openNew').onclick = () => {
+      window.open(app.src, '_blank', 'noopener');
+    };
+
+    // Detección simple de navegadores "in-app" que suelen bloquear geolocalización
+    function isInApp(){
+      const ua = navigator.userAgent || '';
+      return /(FBAN|FBAV|Instagram|Line\/|Twitter|Messenger|WhatsApp|Snapchat|TikTok)/i.test(ua);
+    }
+    // Si NO es in-app y el sitio ya tiene geolocalización habilitada, ocultamos la barra de ayuda
+    if (!isInApp()){
+      // Espera breve por si el usuario ya concede permisos; si no, igual dejamos la barra visible como ayuda.
+      setTimeout(() => {
+        // Puedes ocultar la barra si prefieres:
+        // document.getElementById('helpBar').classList.add('hidden');
+      }, 2000);
+    } else {
+      // En in-app browsers mostramos un texto más claro
+      document.getElementById('helpText').textContent =
+        'Estás usando un navegador dentro de otra app. Toca "Abrir en nueva pestaña" y concede permiso de ubicación.';
+    }
   </script>
 </body>
 </html>
+
